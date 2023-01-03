@@ -1,0 +1,139 @@
+[package]
+name = "rust_webgl_game_library"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+glam = {version = "0.21.2", features = ["bytemuck"]}
+js-sys = "0.3.59"
+console_error_panic_hook = "0.1.7"
+rust_webgl2 ={ path = "C:/RustGameEngine/rust_webgl2"}
+
+serde = {version = "1.0.142", features = ["derive"] }
+serde-wasm-bindgen = "0.4.3"
+
+rand = {version = "0.8.5"}
+getrandom = { version = "0.2.7", features = ["js"] }
+
+fontdue = "0.7.2"
+
+[dependencies.wasm-bindgen]
+version = "0.2.82"
+features = [ "serde-serialize" ]
+
+[dependencies.bytemuck]
+version = "1.4"
+features = [ "derive" ]
+
+[dependencies.gltf]
+version = "1.0"
+features = ["extras", "names", "import", "utils"]
+
+
+[dependencies.uuid]
+version = "1.1.2"
+features = [
+    "v4",                # Lets you generate random UUIDs
+    "js",
+    "fast-rng",          # Use a faster (but still sufficiently random) RNG
+    "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
+]
+
+[dependencies.web-sys]
+version = "0.3.59"
+features = [
+  #------------------------||
+  'HtmlCanvasElement',
+  #WebGL ------------------||
+  'WebGl2RenderingContext',
+  'WebGlActiveInfo',
+  'WebGlBuffer',
+  'WebGlContextAttributes',
+  'WebGlContextEvent',
+  'WebGlContextEventInit',
+  'WebGlFramebuffer',
+  'WebGlPowerPreference',
+  'WebGlProgram',
+  'WebGlQuery',
+  'WebGlRenderbuffer',
+  'WebGlRenderingContext',
+  'WebGlSampler',
+  'WebGlShader',
+  'WebGlShaderPrecisionFormat',
+  'WebGlSync',
+  'WebGlTexture',
+  'WebGlTransformFeedback',
+  'WebGlUniformLocation',
+  'WebGlVertexArrayObject',
+  'WebglColorBufferFloat',
+  'WebglDebugRendererInfo',
+  'WebglDebugShaders',
+  'WebglDepthTexture',
+  'WebglDrawBuffers',
+  'WebglLoseContext',
+  'WebglMultiDraw',
+  #WebXR ------------------||
+  'XrBoundedReferenceSpace',
+  'XrEye',
+  'XrFrame',
+  'XrHandedness',
+  'XrInputSource',
+  'XrInputSourceArray',
+  'XrInputSourceEvent',
+  'XrInputSourceEventInit',
+  'XrInputSourcesChangeEvent',
+  'XrPose',
+  'XrReferenceSpace',
+  'XrReferenceSpaceEvent',
+  'XrReferenceSpaceEventInit',
+  'XrReferenceSpaceType',
+  'XrRenderState',
+  'XrRenderStateInit',
+  'XrRigidTransform',
+  'XrSession',
+  'XrSessionEvent',
+  'XrSessionEventInit',
+  'XrSessionInit',
+  'XrSessionMode',
+  'XrSpace',
+  'XrTargetRayMode',
+  'XrView',
+  'XrViewerPose',
+  'XrViewport',
+  'XrVisibilityState',
+  'XrWebGlLayer',
+  'XrWebGlLayerInit',
+  'XrSystem',
+  'DomPointReadOnly',
+  #------------------------||
+  'console',
+  'CssStyleDeclaration',
+  'Document',
+  'DomStringMap',
+  'DomTokenList',
+  'Element',
+  'Event',
+  'EventTarget',
+  'HtmlBodyElement',
+  'HtmlElement',
+  'HtmlInputElement',
+  'KeyboardEvent',
+  'Location',
+  'Node',
+  'NodeList',
+  'Storage',
+  'Gamepad',
+  'GamepadButton',
+  #------------------------||
+  'Window',
+  'Performance', 
+  'PerformanceTiming',
+  'Navigator',
+  'Request',
+  'RequestInit',
+  'RequestMode',
+  'RequestCache',
+  'RequestCredentials',
+  'Response',
+  #------------------------||
+]
