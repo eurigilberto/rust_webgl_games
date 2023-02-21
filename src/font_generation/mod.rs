@@ -213,7 +213,7 @@ pub fn copy_bitmap_to_texture(
             let c_coord = uvec2(i, j);
             let c_index = coord_to_index(char_bitmap.size, c_coord);
             let c_pixel = char_bitmap.bitmap[c_index];
-            let c_pixel = if c_pixel > 126 { 255 } else { 0 };
+            //let c_pixel = if c_pixel > 126 { 255 } else { 0 };
             let p_coord = uvec2(padding, padding) + c_coord + coord;
             let p_index = coord_to_index(texture_size, p_coord);
             texture[p_index] = c_pixel;

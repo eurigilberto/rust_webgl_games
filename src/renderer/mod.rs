@@ -1,20 +1,19 @@
-use std::{cell::RefCell};
+use std::cell::RefCell;
 
 use glam::*;
 use rust_webgl2::{
-    DrawCapabilities, Graphics, MagFilter, MinFilter,
-    Texture2DProps, TextureInternalFormat, TextureWrap, Viewport, RGBA,
+    DrawCapabilities, Graphics, MagFilter, MinFilter, Texture2DProps, TextureInternalFormat,
+    TextureWrap, Viewport, RGBA,
 };
 
-pub mod render_texture_quad;
 mod render_queue;
+pub mod render_texture_quad;
 pub mod texture_render;
 use render_queue::*;
 pub mod framebuffer;
 use framebuffer::*;
 mod framebuffer_blitter;
 use web_sys::{HtmlCanvasElement, WebGl2RenderingContext};
-
 
 pub struct RenderState {
     pub clear_state: ClearState,
@@ -70,11 +69,16 @@ impl Renderer {
         self.render_queue.borrow_mut().clear_requests();
     }
 
-    pub fn resize(&mut self, size: UVec2){
+    pub fn resize(&mut self, size: UVec2) {
         self.graphics.resize(size);
     }
 
-    pub fn new(clear_state: ClearState, canvas: HtmlCanvasElement, context: WebGl2RenderingContext, sample_count: u32) -> Self {
+    pub fn new(
+        clear_state: ClearState,
+        canvas: HtmlCanvasElement,
+        context: WebGl2RenderingContext,
+        sample_count: u32,
+    ) -> Self {
         let graphics = {
             context
                 .get_extension("EXT_color_buffer_float")
@@ -92,8 +96,12 @@ impl Renderer {
             graphics,
             render_queue: RefCell::new(RenderQueue::new()),
             render_state,
-            sample_count
+            sample_count,
         }
+    }
+
+    pub fn finish(&self) {
+        self.graphics.finish();
     }
 
     pub fn get_graphics(&self) -> &Graphics {
@@ -104,7 +112,9 @@ impl Renderer {
         let mut render_fb = Framebuffer::new(
             &self.graphics,
             size,
-            FramebufferKind::Renderbuffer { sample_count: self.sample_count },
+            FramebufferKind::Renderbuffer {
+                sample_count: self.sample_count,
+            },
         );
         let mut color_fb = Framebuffer::new(
             &self.graphics,
@@ -168,7 +178,7 @@ impl Renderer {
         Ok(())
     }
 
-    fn create_main_render_texture_if_required(&mut self, texture_size: UVec2)->Result<(),()> {
+    fn create_main_render_texture_if_required(&mut self, texture_size: UVec2) -> Result<(), ()> {
         match &mut self.render_state.render_buffers {
             Some(texture_props) => {
                 if texture_props.size != texture_size {
@@ -183,7 +193,7 @@ impl Renderer {
         }
     }
 
-    pub fn render(&mut self, texture_size: UVec2)->Result<(),()> {
+    pub fn render(&mut self, texture_size: UVec2) -> Result<(), ()> {
         self.create_main_render_texture_if_required(texture_size)?;
 
         self.render_state.set_main_framebuffer(&self.graphics);
@@ -202,6 +212,42 @@ impl Renderer {
         self.execute_after_transparent_requests();
         self.blit_to_color_buffer()?;
         Ok(())
+    }
+
+    pub fn resize_canvas_if_required(&mut self, screen_size: UVec2) {
+        if self.graphics.get_canvas_size() != screen_size{
+            self.resize(screen_size);
+        }
+    }
+
+    pub fn blit_to_canvas(&self, screen_size: UVec2, render_size: UVec2) {
+        let src_viewport = Viewport {
+            position: glam::UVec2::ZERO,
+            size: render_size,
+        };
+        let dst_viewport = Viewport {
+            position: glam::UVec2::ZERO,
+            size: screen_size,
+        };
+
+        rust_webgl2::Framebuffer::blit_framebuffer(
+            self.get_graphics(),
+            Some(
+                &self
+                    .render_state
+                    .render_buffers_copy
+                    .as_ref()
+                    .expect("Blit thing")
+                    .framebuffer,
+            ),
+            src_viewport,
+            None,
+            dst_viewport,
+            true,
+            false,
+            false,
+            MagFilter::NEAREST,
+        )
     }
 
     fn execute_opaque_requests(&self) {

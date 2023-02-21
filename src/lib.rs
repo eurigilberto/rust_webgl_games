@@ -14,6 +14,7 @@ pub mod mesh;
 pub mod random_collection;
 pub mod renderer;
 pub mod slotmap;
+pub mod sdf_generation;
 pub mod time;
 
 const CAMERA_BINDING_NUMBER: u32 = 0;

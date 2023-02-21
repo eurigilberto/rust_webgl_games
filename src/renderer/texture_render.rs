@@ -12,7 +12,7 @@ use crate::console_log_format;
 
 use super::{framebuffer::*, framebuffer_blitter::FramebufferBlitter};
 
-pub fn texture_shader_vertex_stage() -> ShaderStage {
+fn texture_shader_vertex_stage() -> ShaderStage {
     ShaderStage {
         import_fn: vec![],
         main_fn: r#"
@@ -214,7 +214,7 @@ impl TextureShaderRender {
             .insert_uniform("texture_size", uniform_size)
         {
             Ok(_) => {}
-            Err(_) => return Err(()),
+            Err(_) => {/* texture size might not be in use */},
         }
         Ok(Self {
             framebuffer,
@@ -257,6 +257,7 @@ impl TextureShaderRender {
         graphics.set_depth_range(0.0, 2.0);
 
         self.material.set_capabilities(graphics, 0);
+        self.material.push_texture_samplers(graphics);
         let mut current_program = self.material.program.use_program();
         self.framebuffer
             .render_framebuffer

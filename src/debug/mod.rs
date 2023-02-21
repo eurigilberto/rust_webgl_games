@@ -21,10 +21,10 @@ impl DebugCubeGizmoRenderer {
         }
     }
 
-    pub fn push_cube(&mut self, pos: Vec3, size: f32, color: RGBA) {
+    pub fn push_cube(&mut self, pos: Vec3, size: Vec3, color: RGBA) {
         self.gizmo_positions.push(pos);
         self.gizmo_colors.push(color);
-        self.gizmo_sizes.push(vec3(size, size, size));
+        self.gizmo_sizes.push(size);
     }
 
     pub fn push_flat_cube(&mut self, pos: Vec3, size: f32, height: f32, color: RGBA) {
@@ -58,7 +58,7 @@ impl DebugCubeGizmoRenderer {
 }
 
 pub mod cube_debug_render {
-    use glam::Vec3;
+    use glam::{Vec3, vec3};
     use rust_webgl2::*;
 
     use crate::renderer::Renderer;
@@ -73,30 +73,41 @@ pub mod cube_debug_render {
 
     pub fn push_debug_cube(pos: Vec3, size: f32, color: RGBA) {
         unsafe {
-            DEBUG_CUBE_RENDERER
-                .as_mut()
-                .unwrap()
-                .push_cube(pos, size, color)
+            if let Some(cube_renderer) = DEBUG_CUBE_RENDERER.as_mut() {
+                cube_renderer.push_cube(pos, vec3(size,size,size), color);
+            }
+        }
+    }
+
+    pub fn push_debug_cuboid(pos: Vec3, size: Vec3, color: RGBA) {
+        unsafe {
+            if let Some(cube_renderer) = DEBUG_CUBE_RENDERER.as_mut() {
+                cube_renderer.push_cube(pos, size, color);
+            }
         }
     }
 
     pub fn push_debug_flat_cube(pos: Vec3, size: f32, height: f32, color: RGBA) {
         unsafe {
-            DEBUG_CUBE_RENDERER
-                .as_mut()
-                .unwrap()
-                .push_flat_cube(pos, size, height, color)
+            if let Some(cube_renderer) = DEBUG_CUBE_RENDERER.as_mut() {
+                cube_renderer.push_flat_cube(pos, size, height, color);
+            }
         }
     }
 
     pub fn clear() {
         unsafe {
-            let debug = DEBUG_CUBE_RENDERER.as_mut().unwrap();
-            debug.clear_gizmos();
+            if let Some(cube_renderer) = DEBUG_CUBE_RENDERER.as_mut() {
+                cube_renderer.clear_gizmos();
+            }
         }
     }
 
     pub fn request_render(renderer: &Renderer) {
-        unsafe { DEBUG_CUBE_RENDERER.as_mut().unwrap().render(renderer) }
+        unsafe { 
+            if let Some(cube_renderer) = DEBUG_CUBE_RENDERER.as_mut() {
+                cube_renderer.render(renderer);
+            }
+        }
     }
 }
