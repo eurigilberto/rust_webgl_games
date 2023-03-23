@@ -51,6 +51,7 @@ pub struct Renderer {
     sample_count: u32,
     graphics: Graphics,
     pub render_state: RenderState,
+    pub render_ops: Vec<RenderOp>,
     render_queue: RefCell<RenderQueue>,
 }
 
@@ -63,6 +64,17 @@ pub const BLIT_CAPABILITIES: DrawCapabilities = DrawCapabilities {
     color_draw_mask: (true, true, true, true),
     depth_draw_mask: true,
 };
+
+#[derive(Clone, Copy)]
+pub enum RenderOp{
+    ExecuteRequests{
+        layer: usize,
+    },
+    BlitToColor,
+    BlitToCanvas{
+        canvas_viewport: Viewport
+    }
+}
 
 impl Renderer {
     pub fn clear_requests(&self) {
@@ -78,6 +90,7 @@ impl Renderer {
         canvas: HtmlCanvasElement,
         context: WebGl2RenderingContext,
         sample_count: u32,
+        requestLayerCount: usize
     ) -> Self {
         let graphics = {
             context
@@ -94,9 +107,10 @@ impl Renderer {
 
         Self {
             graphics,
-            render_queue: RefCell::new(RenderQueue::new()),
+            render_queue: RefCell::new(RenderQueue::new(requestLayerCount)),
             render_state,
             sample_count,
+            render_ops: Vec::new(),
         }
     }
 
@@ -134,6 +148,13 @@ impl Renderer {
 
         Ok(())
     }
+    
+    fn render_buffer_framebuffer_ref(&self) -> &rust_webgl2::Framebuffer {
+        &self.render_state.render_buffers.as_ref().unwrap().framebuffer
+    }
+    fn render_buffer_copy_framebuffer_ref(&self) -> &rust_webgl2::Framebuffer {
+        &self.render_state.render_buffers_copy.as_ref().unwrap().framebuffer
+    }
 
     fn blit_to_color_buffer(&mut self) -> Result<(), ()> {
         if self.render_state.render_buffers.is_none()
@@ -148,18 +169,8 @@ impl Renderer {
             size,
         };
         BLIT_CAPABILITIES.set_capabilities(&self.graphics);
-        let render_framebuffer = &self
-            .render_state
-            .render_buffers
-            .as_ref()
-            .unwrap()
-            .framebuffer;
-        let color_framebuffer = &self
-            .render_state
-            .render_buffers_copy
-            .as_ref()
-            .unwrap()
-            .framebuffer;
+        let render_framebuffer = self.render_buffer_framebuffer_ref();
+        let color_framebuffer = self.render_buffer_copy_framebuffer_ref();
         rust_webgl2::Framebuffer::blit_framebuffer(
             &self.graphics,
             Some(render_framebuffer),
@@ -193,8 +204,8 @@ impl Renderer {
         }
     }
 
-    pub fn render(&mut self, texture_size: UVec2) -> Result<(), ()> {
-        self.create_main_render_texture_if_required(texture_size)?;
+    pub fn render(&mut self, render_texture_size: UVec2) -> Result<(), ()> {
+        self.create_main_render_texture_if_required(render_texture_size)?;
 
         self.render_state.set_main_framebuffer(&self.graphics);
 
@@ -204,13 +215,20 @@ impl Renderer {
             self.render_state.clear_state.stencil,
         );
 
-        self.execute_opaque_requests();
-        //self.blit_to_color_buffer()?;
-        self.execute_after_opaque_requests();
-        self.execute_transparent_requests();
-        //self.blit_to_color_buffer()?;
-        self.execute_after_transparent_requests();
-        self.blit_to_color_buffer()?;
+        for op_index in 0..self.render_ops.len(){
+            let op = self.render_ops[op_index];
+            match op{
+                RenderOp::ExecuteRequests{layer} => {
+                    self.render_queue.borrow_mut().queues[layer].execute_requests(&self.graphics, &self.render_state)
+                },
+                RenderOp::BlitToColor => {
+                    self.blit_to_color_buffer()?;
+                },
+                RenderOp::BlitToCanvas{canvas_viewport} => {
+                    self.blit_to_canvas(canvas_viewport, render_texture_size);
+                }
+            }
+        }
         Ok(())
     }
 
@@ -220,58 +238,33 @@ impl Renderer {
         }
     }
 
-    pub fn blit_to_canvas(&self, screen_size: UVec2, render_size: UVec2) {
-        let src_viewport = Viewport {
-            position: glam::UVec2::ZERO,
-            size: render_size,
-        };
-        let dst_viewport = Viewport {
-            position: glam::UVec2::ZERO,
-            size: screen_size,
-        };
-
-        rust_webgl2::Framebuffer::blit_framebuffer(
-            self.get_graphics(),
-            Some(
-                &self
-                    .render_state
-                    .render_buffers_copy
-                    .as_ref()
-                    .expect("Blit thing")
-                    .framebuffer,
-            ),
-            src_viewport,
-            None,
-            dst_viewport,
-            true,
-            false,
-            false,
-            MagFilter::NEAREST,
-        )
-    }
-
-    fn execute_opaque_requests(&self) {
-        self.render_queue
-            .borrow_mut()
-            .opaque_queue
-            .execute_requests(&self.graphics, &self.render_state);
-    }
-    fn execute_after_opaque_requests(&self) {
-        self.render_queue
-            .borrow_mut()
-            .after_opaque_render
-            .execute_requests(&self.graphics, &self.render_state);
-    }
-    fn execute_transparent_requests(&self) {
-        self.render_queue
-            .borrow_mut()
-            .transparent_queue
-            .execute_requests(&self.graphics, &self.render_state);
-    }
-    fn execute_after_transparent_requests(&self) {
-        self.render_queue
-            .borrow_mut()
-            .after_transparent_render
-            .execute_requests(&self.graphics, &self.render_state);
+    pub fn blit_to_canvas(&self, canvas_viewport: Viewport, render_size: UVec2) {
+        match &self.render_state.render_buffers {
+            Some(texture_props) => {
+                let src_viewport = Viewport {
+                    position: glam::UVec2::ZERO,
+                    size: texture_props.size,
+                };
+                rust_webgl2::Framebuffer::blit_framebuffer(
+                    self.get_graphics(),
+                    Some(
+                        &self
+                            .render_state
+                            .render_buffers_copy
+                            .as_ref()
+                            .expect("Should not be none if the render buffers are not none")
+                            .framebuffer,
+                    ),
+                    src_viewport,
+                    None,
+                    canvas_viewport,
+                    true,
+                    false,
+                    false,
+                    MagFilter::NEAREST,
+                )
+            }
+            None => { /* NO OP */ }
+        }
     }
 }
