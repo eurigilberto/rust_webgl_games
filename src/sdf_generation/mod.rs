@@ -4,13 +4,9 @@ use rust_webgl2::FunctionDefinition;
 use rust_webgl2::FunctionDefinitionType;
 use rust_webgl2::GlTexture2D;
 use rust_webgl2::Graphics;
-use rust_webgl2::MagFilter;
-use rust_webgl2::MinFilter;
 use rust_webgl2::ShaderAttribute;
 use rust_webgl2::ShaderStage;
 use rust_webgl2::ShaderUniform;
-use rust_webgl2::Texture2DProps;
-use rust_webgl2::TextureWrap;
 use rust_webgl2::UniformCollection;
 use rust_webgl2::WebGLDataType;
 

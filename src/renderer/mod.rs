@@ -90,7 +90,7 @@ impl Renderer {
         canvas: HtmlCanvasElement,
         context: WebGl2RenderingContext,
         sample_count: u32,
-        requestLayerCount: usize
+        request_layer_count: usize
     ) -> Self {
         let graphics = {
             context
@@ -107,7 +107,7 @@ impl Renderer {
 
         Self {
             graphics,
-            render_queue: RefCell::new(RenderQueue::new(requestLayerCount)),
+            render_queue: RefCell::new(RenderQueue::new(request_layer_count)),
             render_state,
             sample_count,
             render_ops: Vec::new(),
@@ -225,7 +225,7 @@ impl Renderer {
                     self.blit_to_color_buffer()?;
                 },
                 RenderOp::BlitToCanvas{canvas_viewport} => {
-                    self.blit_to_canvas(canvas_viewport, render_texture_size);
+                    self.blit_to_canvas(canvas_viewport);
                 }
             }
         }
@@ -238,7 +238,7 @@ impl Renderer {
         }
     }
 
-    pub fn blit_to_canvas(&self, canvas_viewport: Viewport, render_size: UVec2) {
+    pub fn blit_to_canvas(&self, canvas_viewport: Viewport) {
         match &self.render_state.render_buffers {
             Some(texture_props) => {
                 let src_viewport = Viewport {

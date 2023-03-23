@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use rust_webgl2::Graphics;
 
 use super::{Renderer, RenderState};
@@ -35,9 +33,9 @@ pub struct RenderQueue {
 }
 
 impl RenderQueue {
-    pub fn new(requestLayerCount: usize) -> Self {
+    pub fn new(request_layer_count: usize) -> Self {
         Self {
-            queues: (0..requestLayerCount)
+            queues: (0..request_layer_count)
                 .map(|_| RenderRequestLayer::new())
                 .collect(),
         }

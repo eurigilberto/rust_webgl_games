@@ -8,8 +8,6 @@ use rust_webgl2::{
     WebGLDataType,
 };
 
-use crate::console_log_format;
-
 use super::{framebuffer::*, framebuffer_blitter::FramebufferBlitter};
 
 fn texture_shader_vertex_stage() -> ShaderStage {

@@ -1,9 +1,7 @@
 use glam::{uvec2, UVec2};
 use rust_webgl2::{
-    GlTexture2D, Graphics, MagFilter, MinFilter, Texture2DProps, TextureInternalFormat, TextureWrap,
+    GlTexture2D, Graphics, Texture2DProps, TextureInternalFormat,
 };
-
-use crate::console_log_format;
 
 pub struct CharacterTextureSlice {
     index: usize,
