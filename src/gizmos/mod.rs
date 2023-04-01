@@ -206,9 +206,10 @@ impl CubeGizmo {
     pub fn request_mutliple_renders(
         &mut self,
         renderer: &Renderer,
+        render_layer: usize,
     ) {
         let render_data = CubeGizmoRenderData::new(&self);
-        renderer.insert_opaque_render_request(
+        renderer.insert_render_request(
             Box::new(move |gr: &Graphics, _| {
                 let mat = render_data.material.upgrade().unwrap();
                 mat.borrow().set_capabilities(gr, 0);
@@ -225,7 +226,7 @@ impl CubeGizmo {
                 );
                 vao.unbind();
             }),
-            0,
+            render_layer,
         );
     }
 }

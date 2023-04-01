@@ -43,7 +43,7 @@ impl DebugCubeGizmoRenderer {
         self.gizmo_positions.len()
     }
 
-    pub fn render(&mut self, renderer: &Renderer) {
+    pub fn render(&mut self, renderer: &Renderer, render_layer: usize) {
         if self.gizmo_positions.len() > 0 {
             let transforms = (self.gizmo_positions.iter().zip(self.gizmo_sizes.iter()))
                 .map(|(pos, size)| {
@@ -52,7 +52,7 @@ impl DebugCubeGizmoRenderer {
                 .collect();
             self.cube_gizmo
                 .update_instance_data(&transforms, &self.gizmo_colors);
-            self.cube_gizmo.request_mutliple_renders(renderer);
+            self.cube_gizmo.request_mutliple_renders(renderer, render_layer);
         }
     }
 }
@@ -103,10 +103,10 @@ pub mod cube_debug_render {
         }
     }
 
-    pub fn request_render(renderer: &Renderer) {
+    pub fn request_render(renderer: &Renderer, render_layer: usize) {
         unsafe { 
             if let Some(cube_renderer) = DEBUG_CUBE_RENDERER.as_mut() {
-                cube_renderer.render(renderer);
+                cube_renderer.render(renderer, render_layer);
             }
         }
     }

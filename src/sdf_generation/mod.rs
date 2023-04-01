@@ -125,7 +125,7 @@ impl SDFGeneration {
     }
 
     pub fn get_texture_ref(&self) -> Rc<GlTexture2D> {
-        self.texture_render.get_texture_ref(0)
+        self.texture_render.framebuffer.get_texture_ref(0)
     }
 
     pub fn render_texture(&mut self, graphics: &Graphics) {

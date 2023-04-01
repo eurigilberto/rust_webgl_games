@@ -3,6 +3,8 @@ use std::rc::Rc;
 use glam::*;
 use rust_webgl2::{GlTexture2D, Graphics, Renderbuffer, Texture2DProps, TextureInternalFormat, FramebufferBinding};
 
+use super::texture_render::{ColorRenderable, RBColorRenderable, DepthRenderable, FramebufferAttachmentFormat};
+
 pub fn is_depth(format: TextureInternalFormat) -> bool {
     match format {
         TextureInternalFormat::DEPTH24_STENCIL8
@@ -13,28 +15,35 @@ pub fn is_depth(format: TextureInternalFormat) -> bool {
     }
 }
 
+
+
+#[derive(Clone, Copy)]
+pub struct FramebufferAttachmentProperties {
+    pub size: UVec2,
+    pub kind: FramebufferKind,
+    pub format: TextureInternalFormat,
+}
+
 #[derive(Clone, Copy)]
 pub enum FramebufferKind {
-    Texture2D { properties: Texture2DProps },
+    Texture2D { properties: Texture2DProps},
     Renderbuffer { sample_count: u32 },
 }
 
 fn create_and_bind_attachment(
     graphics: &Graphics,
-    size: UVec2,
-    kind: FramebufferKind,
-    format: TextureInternalFormat,
+    framebuffer_properties: FramebufferAttachmentProperties,
     framebuffer: &rust_webgl2::Framebuffer,
     attachment: rust_webgl2::FramebufferAttachment,
 ) -> Result<FramebufferAttachment, ()> {
-    match kind {
+    match framebuffer_properties.kind {
         FramebufferKind::Texture2D { properties } => {
-            let texture = GlTexture2D::new(graphics, properties, size, format, None)?;
+            let texture = GlTexture2D::new(graphics, properties, framebuffer_properties.size, framebuffer_properties.format, None)?;
             framebuffer.set_attachment_texture2d(attachment, Some(&texture));
             Ok(FramebufferAttachment::Texture2D(Rc::new(texture)))
         }
         FramebufferKind::Renderbuffer { sample_count } => {
-            let renderbuffer = Renderbuffer::new(graphics, sample_count, size, format)?;
+            let renderbuffer = Renderbuffer::new(graphics, sample_count, framebuffer_properties.size, framebuffer_properties.format)?;
             framebuffer.set_attachment_renderbuffer(attachment, Some(&renderbuffer));
             Ok(FramebufferAttachment::Renderbuffer(Rc::new(renderbuffer)))
         }
@@ -52,6 +61,14 @@ pub struct Framebuffer {
     pub framebuffer: rust_webgl2::Framebuffer,
     pub color: Vec<FramebufferAttachment>,
     pub depth: Option<FramebufferAttachment>,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum CreateAttachmentError{
+    FormatOnlyAvailableOnRenderbuffer,
+    AttachmentCreationFailed,
+    ExpectedDepthTextureFormat,
+    ExpectedColorTextureFormat,
 }
 
 impl Framebuffer {
@@ -81,22 +98,37 @@ impl Framebuffer {
     pub fn create_color_texture(
         &mut self,
         graphics: &Graphics,
-        format: TextureInternalFormat,
-    ) -> Result<(), ()> {
-        if is_depth(format) {
-            panic!("Invalid format | It is not color")
+        format: FramebufferAttachmentFormat,
+    ) -> Result<(), CreateAttachmentError> {
+        if format.is_depth {
+            return Err(CreateAttachmentError::ExpectedColorTextureFormat);
+        }
+        if format.only_renderbuffer {
+            match self.kind {
+                FramebufferKind::Texture2D { .. } => {
+                    return Err(CreateAttachmentError::FormatOnlyAvailableOnRenderbuffer)
+                }
+                _ => {}
+            }
         }
 
         let attachment = rust_webgl2::FramebufferAttachment::Color(self.color.len() as u32);
-        let buffer = create_and_bind_attachment(
+        let framebuffer_props = FramebufferAttachmentProperties {
+            size: self.size,
+            kind: self.kind,
+            format: format.format,
+        };
+
+        let buffer = match create_and_bind_attachment(
             graphics,
-            self.size,
-            self.kind,
-            format,
+            framebuffer_props,
             &self.framebuffer,
             attachment,
-        )?;
-
+        ){
+            Ok(buffer) => buffer,
+            Err(_) => return Err(CreateAttachmentError::AttachmentCreationFailed),
+        };
+        
         self.color.push(buffer);
         Ok(())
     }
@@ -104,27 +136,35 @@ impl Framebuffer {
     pub fn create_depth_texture(
         &mut self,
         graphics: &Graphics,
-        format: TextureInternalFormat,
-    ) -> Result<(), ()> {
-        if !is_depth(format) {
-            panic!("Invalid format | It is not depth")
+        format: FramebufferAttachmentFormat,
+    ) -> Result<(), CreateAttachmentError> {
+        if !format.is_depth {
+            return Err(CreateAttachmentError::ExpectedDepthTextureFormat)
         }
 
-        let attachment = match format {
+        let attachment = match format.format {
             TextureInternalFormat::DEPTH24_STENCIL8 => {
                 rust_webgl2::FramebufferAttachment::DepthStencil
             }
             _ => rust_webgl2::FramebufferAttachment::Depth,
         };
 
-        let buffer = create_and_bind_attachment(
+        let framebuffer_props = FramebufferAttachmentProperties {
+            size: self.size,
+            kind: self.kind,
+            format: format.format,
+        };
+
+        let buffer = match create_and_bind_attachment(
             graphics,
-            self.size,
-            self.kind,
-            format,
+            framebuffer_props,
             &self.framebuffer,
             attachment,
-        )?;
+        ){
+            Ok(buffer) => buffer,
+            Err(_) => return Err(CreateAttachmentError::AttachmentCreationFailed),
+        };
+
         self.depth = Some(buffer);
         Ok(())
     }

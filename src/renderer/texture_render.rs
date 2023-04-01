@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use glam::*;
 use rust_webgl2::{
     CullMode, DrawCapabilities, FunctionDefinition, GlMaterial, GlTexture2D, GlUniform, Graphics,
@@ -7,8 +5,12 @@ use rust_webgl2::{
     Texture2DProps, TextureInternalFormat, UniformCollection, UniformIndex, Viewport,
     WebGLDataType,
 };
+use std::rc::Rc;
 
-use super::{framebuffer::*, framebuffer_blitter::FramebufferBlitter};
+use super::{
+    framebuffer::*, framebuffer_blitter::FramebufferBlitter,
+    texture_framebuffer::TextureFramebuffer,
+};
 
 fn texture_shader_vertex_stage() -> ShaderStage {
     ShaderStage {
@@ -55,6 +57,14 @@ impl TextureShaderSource {
     }
 }
 
+pub struct DepthRenderable(TextureInternalFormat);
+impl DepthRenderable {
+    pub const DEPTH_COMPONENT16: Self = DepthRenderable(TextureInternalFormat::DEPTH_COMPONENT16);
+    pub const DEPTH_COMPONENT24: Self = DepthRenderable(TextureInternalFormat::DEPTH_COMPONENT24);
+    pub const DEPTH_COMPONENT32F: Self = DepthRenderable(TextureInternalFormat::DEPTH_COMPONENT32F);
+    pub const DEPTH24_STENCIL8: Self = DepthRenderable(TextureInternalFormat::DEPTH24_STENCIL8);
+}
+
 pub struct ColorRenderable(TextureInternalFormat);
 impl ColorRenderable {
     pub const R8: Self = ColorRenderable(TextureInternalFormat::R8);
@@ -99,90 +109,49 @@ impl RBColorRenderable {
     pub const RGBA32F: Self = RBColorRenderable(TextureInternalFormat::RGBA32F);
     pub const R11F_G11F_B10F: Self = RBColorRenderable(TextureInternalFormat::R11F_G11F_B10F);
 }
-pub struct TextureFormat {
-    required_render_buffer: bool,
-    texture_format: TextureInternalFormat,
+
+#[derive(Clone, Copy)]
+pub struct FramebufferAttachmentFormat{
+    pub format: TextureInternalFormat,
+    pub only_renderbuffer: bool,
+    pub is_depth: bool,
 }
 
-impl Into<TextureFormat> for RBColorRenderable{
-    fn into(self) -> TextureFormat {
-        TextureFormat {
-            required_render_buffer: true,
-            texture_format: self.0,
+impl Into<FramebufferAttachmentFormat> for DepthRenderable{
+    fn into(self) -> FramebufferAttachmentFormat {
+        FramebufferAttachmentFormat {
+            format: self.0,
+            is_depth: true,
+            only_renderbuffer: false,
         }
     }
 }
 
-impl Into<TextureFormat> for ColorRenderable{
-    fn into(self) -> TextureFormat {
-        TextureFormat {
-            required_render_buffer: false,
-            texture_format: self.0,
+impl Into<FramebufferAttachmentFormat> for ColorRenderable{
+    fn into(self) -> FramebufferAttachmentFormat {
+        FramebufferAttachmentFormat {
+            format: self.0,
+            is_depth: false,
+            only_renderbuffer: false,
         }
     }
 }
 
-#[allow(non_snake_case)]
-pub fn create_texture2D_framebuffer(
-    graphics: &Graphics,
-    size: UVec2,
-    properties: Texture2DProps,
-    texture_formats: &Vec<TextureFormat>,
-) -> TextureFramebuffer {
-    let require_renderbuffer = texture_formats
-        .iter()
-        .any(|format| format.required_render_buffer);
-
-    let mut render_framebuffer = Framebuffer::new(
-        graphics,
-        size,
-        match require_renderbuffer {
-            true => FramebufferKind::Renderbuffer { sample_count: 0 },
-            false => FramebufferKind::Texture2D { properties },
-        },
-    );
-
-    let framebuffer_blitter = if require_renderbuffer && texture_formats.len() > 1 {
-        Some(FramebufferBlitter::new(graphics))
-    } else {
-        None
-    };
-
-    for format in texture_formats {
-        render_framebuffer
-            .create_color_texture(graphics, format.texture_format)
-            .unwrap();
-    }
-    let blit_framebuffer = match require_renderbuffer {
-        true => {
-            let mut blit_framebuffer =
-                Framebuffer::new(graphics, size, FramebufferKind::Texture2D { properties });
-            for format in texture_formats {
-                blit_framebuffer
-                    .create_color_texture(graphics, format.texture_format)
-                    .unwrap();
-            }
-            Some(blit_framebuffer)
+impl Into<FramebufferAttachmentFormat> for RBColorRenderable{
+    fn into(self) -> FramebufferAttachmentFormat {
+        FramebufferAttachmentFormat {
+            format: self.0,
+            is_depth: false,
+            only_renderbuffer: true,
         }
-        false => None,
-    };
-    TextureFramebuffer {
-        render_framebuffer,
-        blit_framebuffer,
-        framebuffer_blitter
     }
-}
-
-pub struct TextureFramebuffer {
-    render_framebuffer: Framebuffer,
-    blit_framebuffer: Option<Framebuffer>,
-    framebuffer_blitter: Option<FramebufferBlitter>,
 }
 
 pub struct TextureShaderRender {
     pub material: GlMaterial,
     size: UVec2,
-    framebuffer: TextureFramebuffer,
+    pub framebuffer: TextureFramebuffer,
+    framebuffer_blitter: Option<FramebufferBlitter>,
 }
 
 impl TextureShaderRender {
@@ -190,11 +159,15 @@ impl TextureShaderRender {
         graphics: &Graphics,
         properties: Texture2DProps,
         size: UVec2,
-        texture_formats: Vec<TextureFormat>,
+        texture_formats: Vec<FramebufferAttachmentFormat>,
         shader: TextureShaderSource,
     ) -> Result<Self, ()> {
-        let framebuffer =
-            create_texture2D_framebuffer(graphics, size, properties, &texture_formats);
+        let framebuffer = TextureFramebuffer::new(graphics, size, properties, &texture_formats);
+        let framebuffer_blitter = if framebuffer.has_blit_framebuffer() {
+            Some(FramebufferBlitter::new(graphics))
+        } else {
+            None
+        };
 
         let mut material = GlMaterial::with_source(
             graphics,
@@ -212,12 +185,13 @@ impl TextureShaderRender {
             .insert_uniform("texture_size", uniform_size)
         {
             Ok(_) => {}
-            Err(_) => {/* texture size might not be in use */},
+            Err(_) => { /* texture size might not be in use */ }
         }
         Ok(Self {
             framebuffer,
             material,
             size,
+            framebuffer_blitter,
         })
     }
 
@@ -237,19 +211,6 @@ impl TextureShaderRender {
         Ok(uniform_indices)
     }
 
-    pub fn get_texture_ref(&self, index: usize) -> Rc<GlTexture2D> {
-        match &self.framebuffer.blit_framebuffer {
-            Some(blit_framebuffer) => match &blit_framebuffer.color[index] {
-                FramebufferAttachment::Renderbuffer(_) => panic!("Incorrect attachment type"),
-                FramebufferAttachment::Texture2D(tx) => Rc::clone(tx),
-            },
-            None => match &self.framebuffer.render_framebuffer.color[index] {
-                FramebufferAttachment::Renderbuffer(_) => panic!("Incorrect attachment type"),
-                FramebufferAttachment::Texture2D(tx) => Rc::clone(tx),
-            },
-        }
-    }
-
     pub fn render_texture(&mut self, graphics: &Graphics) {
         graphics.set_viewport(IVec2::ZERO, self.size);
         graphics.set_depth_range(0.0, 2.0);
@@ -258,32 +219,15 @@ impl TextureShaderRender {
         self.material.push_texture_samplers(graphics);
         let mut current_program = self.material.program.use_program();
         self.framebuffer
-            .render_framebuffer
-            .bind(rust_webgl2::FramebufferBinding::DRAW_FRAMEBUFFER);
+            .bind_render_buffer(rust_webgl2::FramebufferBinding::DRAW_FRAMEBUFFER);
         current_program.push_all_uniforms();
         current_program.draw_arrays(PrimitiveType::TRIANGLE_STRIP, 0, 4);
 
-        if let Some(blit_framebuffer) = &self.framebuffer.blit_framebuffer {
-            if let Some(framebuffer_blitter) = &self.framebuffer.framebuffer_blitter{
-                framebuffer_blitter.blit_multi_attachment(graphics, &self.framebuffer.render_framebuffer, blit_framebuffer, MagFilter::LINEAR);
-            }else{
-                let viewport = Viewport {
-                    position: UVec2::ZERO,
-                    size: self.size,
-                };
-    
-                rust_webgl2::Framebuffer::blit_framebuffer(
-                    graphics,
-                    Some(&self.framebuffer.render_framebuffer.framebuffer),
-                    viewport,
-                    Some(&blit_framebuffer.framebuffer),
-                    viewport,
-                    true,
-                    false,
-                    false,
-                    MagFilter::LINEAR,
-                )
-            }
+        if let Some(framebuffer_blitter) = &self.framebuffer_blitter {
+            self.framebuffer
+                .blit_multi_attachment(graphics, framebuffer_blitter);
+        } else {
+            self.framebuffer.blit_first_attachement(graphics);
         }
     }
 }

@@ -99,7 +99,7 @@ impl RenderTextureQuad {
 
 	pub fn request_render(&self, renderer: &Renderer){
 		let mat = Rc::clone(&self.material);
-		renderer.insert_opaque_render_request(Box::new(move |graphics, _|{
+		renderer.insert_render_request(Box::new(move |graphics, _|{
 			let mut material = mat.borrow_mut();
 			material.set_capabilities(graphics, 0);
 			material.push_texture_samplers(graphics);

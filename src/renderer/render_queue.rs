@@ -47,7 +47,7 @@ impl RenderQueue {
 }
 
 impl Renderer{
-	pub fn insert_opaque_render_request(&self, request: RenderRequest, layer: usize) {
+	pub fn insert_render_request(&self, request: RenderRequest, layer: usize) {
         self.render_queue.borrow_mut().queues[layer].insert_render_request(request);
     }
 }

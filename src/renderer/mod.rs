@@ -6,6 +6,7 @@ use rust_webgl2::{
     TextureWrap, Viewport, RGBA,
 };
 
+pub mod texture_framebuffer;
 mod render_queue;
 pub mod render_texture_quad;
 pub mod texture_render;
@@ -14,6 +15,8 @@ pub mod framebuffer;
 use framebuffer::*;
 mod framebuffer_blitter;
 use web_sys::{HtmlCanvasElement, WebGl2RenderingContext};
+
+use self::texture_render::{ColorRenderable, DepthRenderable};
 
 pub struct RenderState {
     pub clear_state: ClearState,
@@ -138,10 +141,10 @@ impl Renderer {
             },
         );
 
-        render_fb.create_color_texture(&self.graphics, TextureInternalFormat::RGBA8)?;
-        render_fb.create_depth_texture(&self.graphics, TextureInternalFormat::DEPTH24_STENCIL8)?;
+        render_fb.create_color_texture(&self.graphics, ColorRenderable::RGBA8.into()).expect("Could not create color texture");
+        render_fb.create_depth_texture(&self.graphics, DepthRenderable::DEPTH24_STENCIL8.into()).expect("Could not create depth texture");
 
-        color_fb.create_color_texture(&self.graphics, TextureInternalFormat::RGBA8)?;
+        color_fb.create_color_texture(&self.graphics, ColorRenderable::RGBA8.into()).expect("Could not create color texture");
 
         self.render_state.render_buffers = Some(render_fb);
         self.render_state.render_buffers_copy = Some(color_fb);
