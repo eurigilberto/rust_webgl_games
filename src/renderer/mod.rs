@@ -141,10 +141,10 @@ impl Renderer {
             },
         );
 
-        render_fb.create_color_texture(&self.graphics, ColorRenderable::RGBA8.into()).expect("Could not create color texture");
-        render_fb.create_depth_texture(&self.graphics, DepthRenderable::DEPTH24_STENCIL8.into()).expect("Could not create depth texture");
+        render_fb.create_color_texture(&self.graphics, ColorRenderable::RGBA8.into(), Some("Main Color RB".into())).expect("Could not create color texture");
+        render_fb.create_depth_texture(&self.graphics, DepthRenderable::DEPTH24_STENCIL8.into(), Some("Main Depth RB".into())).expect("Could not create depth texture");
 
-        color_fb.create_color_texture(&self.graphics, ColorRenderable::RGBA8.into()).expect("Could not create color texture");
+        color_fb.create_color_texture(&self.graphics, ColorRenderable::RGBA8.into(), Some("Blit Color RB".into())).expect("Could not create color texture");
 
         self.render_state.render_buffers = Some(render_fb);
         self.render_state.render_buffers_copy = Some(color_fb);

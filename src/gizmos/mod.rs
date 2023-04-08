@@ -4,7 +4,7 @@ use std::rc::Rc;
 use bytemuck::{Pod, Zeroable};
 use rust_webgl2::*;
 
-use crate::geometry;
+use crate::{geometry, console_log_format};
 use crate::renderer::Renderer;
 use glam::*;
 
@@ -29,8 +29,8 @@ impl CubeGizmoInstanceData {
     pub const fn get_stride() -> u8 {
         Self::get_size() as u8
     }
-    pub fn get_offset(index: u32) -> u8 {
-        ((std::mem::size_of::<f32>() as u32 * 4) * index) as u8
+    pub fn get_offset(index: u32) -> u32 {
+        (std::mem::size_of::<f32>() as u32 * 4) * index
     }
 
     pub fn get_attribute_descriptions(

@@ -112,6 +112,7 @@ impl SDFGeneration {
                     },
                 },
             },
+            Some("SDF_Texture".into())
         )
         .expect("Texture Shader Render creation failed");
         texture_render

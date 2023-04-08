@@ -233,6 +233,7 @@ pub fn generate_gl_texture_2d(
         texture_size,
         TextureInternalFormat::R8,
         None,
+        Some("FontTexture".into())
     )
     .unwrap();
     gl_texture.set_texture_data(0, &texture_data, 0).unwrap();

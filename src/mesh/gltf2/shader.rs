@@ -123,5 +123,6 @@ pub fn default_shader() -> ShaderSource {
             },
             main_fn: FRAG_MAIN_FN.into(),
         },
+        local_import: None
     }
 }

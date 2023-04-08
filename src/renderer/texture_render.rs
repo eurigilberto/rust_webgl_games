@@ -53,6 +53,7 @@ impl TextureShaderSource {
             imported_functions: self.imported_functions,
             vertex_shader: texture_shader_vertex_stage(),
             fragment_shader: self.fragment_shader,
+            local_import: None
         }
     }
 }
@@ -161,8 +162,9 @@ impl TextureShaderRender {
         size: UVec2,
         texture_formats: Vec<FramebufferAttachmentFormat>,
         shader: TextureShaderSource,
+        name: Option<String>
     ) -> Result<Self, ()> {
-        let framebuffer = TextureFramebuffer::new(graphics, size, properties, &texture_formats);
+        let framebuffer = TextureFramebuffer::new(graphics, size, properties, &texture_formats, name);
         let framebuffer_blitter = if framebuffer.has_blit_framebuffer() {
             Some(FramebufferBlitter::new(graphics))
         } else {

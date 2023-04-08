@@ -24,34 +24,14 @@ os_position = vert_pos;
 gl_Position = clip_position;"#;
 
 const FRAG_MAIN_FN: &str = r#"
-float y_param = (os_position.y * 0.5 + 0.5);
-vec3 color = mix(0.5, 1.0, y_param) * inst_color.xyz;
-frag_color = vec4(color, 1.0);"#;
+vec2 xz_mask = step(abs(os_position.xz), vec2(0.47));
+vec2 xy_mask = step(abs(os_position.xy), vec2(0.47));
+vec2 yz_mask = step(abs(os_position.yz), vec2(0.47));
 
-/*pub struct DefaultGizmoUnifomrs {
-    pub model_transform_index: UniformIndex,
-    pub gizmo_color_index: UniformIndex,
-}
-pub fn get_default_gizmo_uniforms(material: &mut GlMaterial) -> DefaultGizmoUnifomrs {
-    let model_transform_index = material
-        .program
-        .insert_uniform(
-            "model_transform".into(),
-            GlUniform::Float(FloatUniform::Mat4(Mat4::IDENTITY)),
-        )
-        .unwrap();
-    let gizmo_color_index = material
-        .program
-        .insert_uniform(
-            "gizmo_color".into(),
-            GlUniform::Float(FloatUniform::Vec4(vec4(0.0, 0.0, 0.0, 1.0))),
-        )
-        .unwrap();
-    DefaultGizmoUnifomrs {
-        model_transform_index,
-        gizmo_color_index,
-    }
-}*/
+float mask = (xz_mask.x * xz_mask.y) + (xy_mask.x * xy_mask.y) + (yz_mask.x * yz_mask.y);
+mask = clamp(mask, 0.0, 1.0);
+vec3 color = inst_color.xyz * mix(0.75, 1.0, mask);
+frag_color = vec4(color, 1.0);"#;
 
 pub fn gizmo_default_shader_source() -> ShaderSource {
     let mut vertex_attribs = Vec::new();
@@ -107,5 +87,6 @@ pub fn gizmo_default_shader_source() -> ShaderSource {
                 uniform_blocks: Vec::new(),
             },
         },
+        local_import: None
     }
 }

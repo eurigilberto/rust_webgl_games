@@ -16,6 +16,7 @@ impl TextureFramebuffer {
         size: UVec2,
         properties: Texture2DProps,
         texture_formats: &Vec<FramebufferAttachmentFormat>,
+        name: Option<String>
     ) -> Self {
         let require_renderbuffer = texture_formats
             .iter()
@@ -30,18 +31,26 @@ impl TextureFramebuffer {
             },
         );
 
-        for format in texture_formats {
+        for (index, format) in texture_formats.iter().enumerate() {
+            let name = match name{
+                Some(ref n) => n.clone(),
+                None => "Tex".into(),
+            };
             render_framebuffer
-                .create_color_texture(graphics, *format)
+                .create_color_texture(graphics, *format, Some(format!("{}-{}", name, index)))
                 .unwrap();
         }
         let blit_framebuffer = match require_renderbuffer {
             true => {
                 let mut blit_framebuffer =
                     Framebuffer::new(graphics, size, FramebufferKind::Texture2D { properties });
-                for format in texture_formats {
+                for (index, format) in texture_formats.iter().enumerate() {
+                    let name = match name{
+                        Some(ref n) => n.clone(),
+                        None => "Tex-Blit".into(),
+                    };
                     blit_framebuffer
-                        .create_color_texture(graphics, *format)
+                        .create_color_texture(graphics, *format, Some(format!("{}-{}", name, index)))
                         .unwrap();
                 }
                 Some(blit_framebuffer)

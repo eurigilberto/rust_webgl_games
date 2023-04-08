@@ -273,7 +273,7 @@ impl Curve2DRenderer {
                 normalize: false,
                 kind: AttributeType::Interleaved {
                     stride,
-                    offset: (Curve2DVertexData::ELEM_SIZE * 2) as u8,
+                    offset: Curve2DVertexData::ELEM_SIZE * 2,
                 },
             },
         ];

@@ -3,6 +3,8 @@ use std::rc::Rc;
 use glam::*;
 use rust_webgl2::{GlTexture2D, Graphics, Renderbuffer, Texture2DProps, TextureInternalFormat, FramebufferBinding};
 
+use crate::console_log_format;
+
 use super::texture_render::{ColorRenderable, RBColorRenderable, DepthRenderable, FramebufferAttachmentFormat};
 
 pub fn is_depth(format: TextureInternalFormat) -> bool {
@@ -35,15 +37,16 @@ fn create_and_bind_attachment(
     framebuffer_properties: FramebufferAttachmentProperties,
     framebuffer: &rust_webgl2::Framebuffer,
     attachment: rust_webgl2::FramebufferAttachment,
+    name: Option<String>
 ) -> Result<FramebufferAttachment, ()> {
     match framebuffer_properties.kind {
         FramebufferKind::Texture2D { properties } => {
-            let texture = GlTexture2D::new(graphics, properties, framebuffer_properties.size, framebuffer_properties.format, None)?;
+            let texture = GlTexture2D::new(graphics, properties, framebuffer_properties.size, framebuffer_properties.format, None, name)?;
             framebuffer.set_attachment_texture2d(attachment, Some(&texture));
             Ok(FramebufferAttachment::Texture2D(Rc::new(texture)))
         }
         FramebufferKind::Renderbuffer { sample_count } => {
-            let renderbuffer = Renderbuffer::new(graphics, sample_count, framebuffer_properties.size, framebuffer_properties.format)?;
+            let renderbuffer = Renderbuffer::new(graphics, name, sample_count, framebuffer_properties.size, framebuffer_properties.format)?;
             framebuffer.set_attachment_renderbuffer(attachment, Some(&renderbuffer));
             Ok(FramebufferAttachment::Renderbuffer(Rc::new(renderbuffer)))
         }
@@ -99,6 +102,7 @@ impl Framebuffer {
         &mut self,
         graphics: &Graphics,
         format: FramebufferAttachmentFormat,
+        name: Option<String>,
     ) -> Result<(), CreateAttachmentError> {
         if format.is_depth {
             return Err(CreateAttachmentError::ExpectedColorTextureFormat);
@@ -124,6 +128,7 @@ impl Framebuffer {
             framebuffer_props,
             &self.framebuffer,
             attachment,
+            name
         ){
             Ok(buffer) => buffer,
             Err(_) => return Err(CreateAttachmentError::AttachmentCreationFailed),
@@ -137,6 +142,7 @@ impl Framebuffer {
         &mut self,
         graphics: &Graphics,
         format: FramebufferAttachmentFormat,
+        name: Option<String>,
     ) -> Result<(), CreateAttachmentError> {
         if !format.is_depth {
             return Err(CreateAttachmentError::ExpectedDepthTextureFormat)
@@ -160,6 +166,7 @@ impl Framebuffer {
             framebuffer_props,
             &self.framebuffer,
             attachment,
+            name
         ){
             Ok(buffer) => buffer,
             Err(_) => return Err(CreateAttachmentError::AttachmentCreationFailed),
@@ -167,5 +174,11 @@ impl Framebuffer {
 
         self.depth = Some(buffer);
         Ok(())
+    }
+}
+
+impl Drop for Framebuffer{
+    fn drop(&mut self) {
+        //console_log_format!("Dropped framebuffer with | color count : {} | depth: {}", self.color.len(), self.depth.is_some())
     }
 }

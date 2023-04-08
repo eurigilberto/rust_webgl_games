@@ -199,7 +199,7 @@ impl MeshData {
         attribute_locations: AttributeLocations,
     ) -> Result<GlVertexArrayObject, String> {
         let mut stride = 0;
-        let mut interleave_data: Vec<(u32, u8, AttributeSize)> = Vec::new();
+        let mut interleave_data: Vec<(u32, u32, AttributeSize)> = Vec::new();
 
         let vertex_count = self.positions.len();
         interleave_data.push((
@@ -271,8 +271,8 @@ impl MeshData {
 
         let mut attribute_descriptions = Vec::new();
         for (loc, offset, size) in interleave_data {
-            let stride = stride * std::mem::size_of::<f32>() as u8;
-            let offset = offset * std::mem::size_of::<f32>() as u8;
+            let stride = stride as u8 * std::mem::size_of::<f32>() as u8;
+            let offset = offset * std::mem::size_of::<f32>() as u32;
             attribute_descriptions.push(AttributeDescription {
                 location: loc,
                 unit_type: NumberType::FLOAT,

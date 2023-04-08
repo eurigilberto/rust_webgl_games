@@ -79,6 +79,7 @@ frag_color = vec4(line_color, 1.0);
             }],
             uniform_collection: UniformCollection::new(),
         },
+        local_import: None,
     }
 }
 

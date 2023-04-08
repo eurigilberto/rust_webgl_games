@@ -60,6 +60,7 @@ pub fn get_quad_shader(fragment_shader: String) -> ShaderSource {
             attributes: vec![ShaderAttribute::get_default_frag_attribute()],
             uniform_collection: UniformCollection::new(),
         },
+        local_import: None
     }
 }
 
