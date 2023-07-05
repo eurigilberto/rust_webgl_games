@@ -7,7 +7,7 @@ edition = "2021"
 glam = {version = "0.21.2", features = ["bytemuck"]}
 js-sys = "0.3.59"
 console_error_panic_hook = "0.1.7"
-rust_webgl2 ={ path = "C:/RustProjects/rust_webgl2"}
+rust_webgl2 ={ git = "https://github.com/eurigilberto/rust_webgl2.git" }
 
 serde = {version = "1.0.142", features = ["derive"] }
 serde-wasm-bindgen = "0.4.3"
