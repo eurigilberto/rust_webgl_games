@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-glam = {version = "0.21.2", features = ["bytemuck"]}
+glam = {version = "0.24.1", features = ["bytemuck"]}
 js-sys = "0.3.59"
 console_error_panic_hook = "0.1.7"
 rust_webgl2 ={ git = "https://github.com/eurigilberto/rust_webgl2.git" }
