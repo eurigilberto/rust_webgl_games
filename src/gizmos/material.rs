@@ -26,7 +26,7 @@ os_position = vert_pos;
 gl_Position = clip_position;"#;
 
 const FRAG_MAIN_FN: &str = r#"
-vec3 mask_size = vec3(0.485) * cube_scale.xyz;
+vec3 mask_size = vec3(0.485) / cube_scale.xyz;
 vec2 xz_mask = step(abs(os_position.xz), mask_size.xz);
 vec2 xy_mask = step(abs(os_position.xy), mask_size.xy);
 vec2 yz_mask = step(abs(os_position.yz), mask_size.yz);
