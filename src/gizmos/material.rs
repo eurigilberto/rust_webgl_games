@@ -26,9 +26,9 @@ os_position = vert_pos;
 gl_Position = clip_position;"#;
 
 const FRAG_MAIN_FN: &str = r#"
-vec2 xz_mask = step(abs(os_position.xz), vec2(0.47) / cube_scale.xz);
-vec2 xy_mask = step(abs(os_position.xy), vec2(0.47) / cube_scale.xy);
-vec2 yz_mask = step(abs(os_position.yz), vec2(0.47) / cube_scale.yz);
+vec2 xz_mask = step(abs(os_position.xz), vec2(0.47) * cube_scale.xz);
+vec2 xy_mask = step(abs(os_position.xy), vec2(0.47) * cube_scale.xy);
+vec2 yz_mask = step(abs(os_position.yz), vec2(0.47) * cube_scale.yz);
 
 float mask = (xz_mask.x * xz_mask.y) + (xy_mask.x * xy_mask.y) + (yz_mask.x * yz_mask.y);
 mask = clamp(mask, 0.0, 1.0);
