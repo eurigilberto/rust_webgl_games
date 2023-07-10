@@ -9,6 +9,8 @@ vec4 tr0 = tr_row_0;
 vec4 tr1 = tr_row_1;
 vec4 tr2 = tr_row_2;
 
+cube_scale = vec3(length(tr0.xyz), length(tr1.xyz), length(tr2.xyz));
+
 vec4 tc0 = vec4(tr0.x, tr1.x, tr2.x, 0.0);
 vec4 tc1 = vec4(tr0.y, tr1.y, tr2.y, 0.0);
 vec4 tc2 = vec4(tr0.z, tr1.z, tr2.z, 0.0);
@@ -24,9 +26,9 @@ os_position = vert_pos;
 gl_Position = clip_position;"#;
 
 const FRAG_MAIN_FN: &str = r#"
-vec2 xz_mask = step(abs(os_position.xz), vec2(0.47));
-vec2 xy_mask = step(abs(os_position.xy), vec2(0.47));
-vec2 yz_mask = step(abs(os_position.yz), vec2(0.47));
+vec2 xz_mask = step(abs(os_position.xz), vec2(0.47) / cube_scale.xz);
+vec2 xy_mask = step(abs(os_position.xy), vec2(0.47) / cube_scale.xy);
+vec2 yz_mask = step(abs(os_position.yz), vec2(0.47) / cube_scale.yz);
 
 float mask = (xz_mask.x * xz_mask.y) + (xy_mask.x * xy_mask.y) + (yz_mask.x * yz_mask.y);
 mask = clamp(mask, 0.0, 1.0);
@@ -58,6 +60,11 @@ pub fn gizmo_default_shader_source() -> ShaderSource {
                 interp: None,
                 kind: WebGLDataType::Vec4,
                 name: "inst_color".into(),
+            },
+            ShaderVarying {
+                interp: None,
+                kind: WebGLDataType::Vec3,
+                name: "cube_scale".into(),
             },
         ],
         common_uniforms: UniformCollection {
