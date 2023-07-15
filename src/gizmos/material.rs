@@ -26,16 +26,24 @@ os_position = vert_pos;
 gl_Position = clip_position;"#;
 
 const FRAG_MAIN_FN: &str = r#"
-vec3 outline_size = vec3(0.25) / cube_scale.xyz;
+vec3 outline_size = vec3(0.1) / cube_scale.xyz;
 vec3 mask_size = vec3(0.5) - (outline_size * 0.5);
-vec2 xz_mask = step(abs(os_position.xz), mask_size.xz);
-vec2 xy_mask = step(abs(os_position.xy), mask_size.xy);
-vec2 yz_mask = step(abs(os_position.yz), mask_size.yz);
+vec3 abs_pos = abs(os_position);
+vec2 xz_mask = step(abs_pos.xz, mask_size.xz);
+vec2 xy_mask = step(abs_pos.xy, mask_size.xy);
+vec2 yz_mask = step(abs_pos.yz, mask_size.yz);
+
+vec3 out_size = vec3(0.5) - outline_size * 0.05;
+vec3 step_mask = step(out_size, abs_pos);
+
+float y_mult = 1.0 + step_mask.y + step_mask.x * 2.0;
+y_mult = (step_mask.y * step_mask.z) + (step_mask.y * step_mask.x) + (step_mask.z * step_mask.x);//1.0 / y_mult;
+y_mult = 1.0 - clamp(y_mult, 0.0, 1.0);
 
 float mask = (xz_mask.x * xz_mask.y) + (xy_mask.x * xy_mask.y) + (yz_mask.x * yz_mask.y);
 mask = clamp(mask, 0.0, 1.0);
 vec3 color = inst_color.xyz * mix(0.75, 1.0, mask);
-frag_color = vec4(color, 1.0);"#;
+frag_color = vec4(color * y_mult, 1.0);"#;
 
 pub fn gizmo_default_shader_source() -> ShaderSource {
     let mut vertex_attribs = Vec::new();

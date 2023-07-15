@@ -14,6 +14,14 @@ impl From<Second> for Milisecond{
     }
 }
 
+impl std::ops::Mul<f32> for Second{
+    type Output = f32;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        self.0 as f32 * rhs
+    }
+}
+
 #[derive(Clone, Copy)]
 pub struct FrameCount(pub u64);
 

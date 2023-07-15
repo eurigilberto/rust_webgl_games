@@ -4,61 +4,57 @@ use rust_webgl2::*;
 
 pub struct DebugCubeGizmoRenderer {
     cube_gizmo: CubeGizmo,
-    gizmo_positions: Vec<Vec3>,
-    gizmo_sizes: Vec<Vec3>,
     gizmo_colors: Vec<RGBA>,
+    gizmo_matrix: Vec<Mat4>,
 }
 
 impl DebugCubeGizmoRenderer {
-    pub fn new(renderer: &mut Renderer) -> Self {
-        let cube_gizmo = CubeGizmo::new(renderer.get_graphics(), 2500);
+    pub fn new(renderer: &mut Renderer, gizmo_count: u32) -> Self {
+        let cube_gizmo = CubeGizmo::new(renderer.get_graphics(), gizmo_count);
 
         Self {
             cube_gizmo,
-            gizmo_positions: Vec::new(),
-            gizmo_sizes: Vec::new(),
             gizmo_colors: Vec::new(),
+            gizmo_matrix: Vec::new()
         }
     }
 
     pub fn push_cube(&mut self, pos: Vec3, size: Vec3, color: RGBA) {
-        self.gizmo_positions.push(pos);
         self.gizmo_colors.push(color);
-        self.gizmo_sizes.push(size);
+        self.gizmo_matrix.push(Mat4::from_scale_rotation_translation(size, Quat::IDENTITY, pos));
     }
 
     pub fn push_flat_cube(&mut self, pos: Vec3, size: f32, height: f32, color: RGBA) {
-        self.gizmo_positions.push(pos);
         self.gizmo_colors.push(color);
-        self.gizmo_sizes.push(vec3(size, height, size));
+        let size = vec3(size, height, size);
+        self.gizmo_matrix.push(Mat4::from_scale_rotation_translation(size, Quat::IDENTITY, pos));
+    }
+
+    pub fn push_cube_matrix(&mut self, matrix: Mat4, color: RGBA){
+        self.gizmo_colors.push(color);
+        self.gizmo_matrix.push(matrix);
     }
 
     pub fn clear_gizmos(&mut self) {
         self.gizmo_colors.clear();
-        self.gizmo_positions.clear();
-        self.gizmo_sizes.clear();
+        self.gizmo_matrix.clear();
     }
 
     pub fn get_current_count(&self) -> usize {
-        self.gizmo_positions.len()
+        self.gizmo_matrix.len()
     }
 
     pub fn render(&mut self, renderer: &Renderer, render_layer: usize) {
-        if self.gizmo_positions.len() > 0 {
-            let transforms = (self.gizmo_positions.iter().zip(self.gizmo_sizes.iter()))
-                .map(|(pos, size)| {
-                    Mat4::from_scale_rotation_translation(*size, Quat::IDENTITY, *pos)
-                })
-                .collect();
+        if self.gizmo_matrix.len() > 0 {
             self.cube_gizmo
-                .update_instance_data(&transforms, &self.gizmo_colors);
+                .update_instance_data(&self.gizmo_matrix, &self.gizmo_colors);
             self.cube_gizmo.request_mutliple_renders(renderer, render_layer);
         }
     }
 }
 
 pub mod cube_debug_render {
-    use glam::{Vec3, vec3};
+    use glam::{Vec3, vec3, Mat4};
     use rust_webgl2::*;
 
     use crate::renderer::Renderer;
@@ -67,8 +63,8 @@ pub mod cube_debug_render {
 
     pub static mut DEBUG_CUBE_RENDERER: Option<DebugCubeGizmoRenderer> = None;
 
-    pub fn create_debug_renderer(renderer: &mut Renderer) {
-        unsafe { DEBUG_CUBE_RENDERER = Some(DebugCubeGizmoRenderer::new(renderer)) }
+    pub fn create_debug_renderer(renderer: &mut Renderer, gizmo_count: u32) {
+        unsafe { DEBUG_CUBE_RENDERER = Some(DebugCubeGizmoRenderer::new(renderer, gizmo_count)) }
     }
 
     pub fn push_debug_cube(pos: Vec3, size: f32, color: RGBA) {
@@ -91,6 +87,14 @@ pub mod cube_debug_render {
         unsafe {
             if let Some(cube_renderer) = DEBUG_CUBE_RENDERER.as_mut() {
                 cube_renderer.push_flat_cube(pos, size, height, color);
+            }
+        }
+    }
+
+    pub fn push_debug_cube_matrix(matrix: Mat4, color: RGBA){
+        unsafe{
+            if let Some(cube_renderer) = DEBUG_CUBE_RENDERER.as_mut(){
+                cube_renderer.push_cube_matrix(matrix, color);
             }
         }
     }

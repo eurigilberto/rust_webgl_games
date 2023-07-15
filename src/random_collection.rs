@@ -13,8 +13,7 @@ impl RandomF32Collection {
 
         let mut random_values = Vec::new();
         for _ in 0..collection_size {
-            let values: (f32, f32) = (rand::random(), rand::random());
-			random_values.push((values.0 + values.1) / 2.0);
+			random_values.push(rand::random());
 		}
 
         Self {
@@ -32,4 +31,9 @@ impl RandomF32Collection {
         self.current_index.set(next_index);
 		value
 	}
+
+    pub fn set_index(&self, seed: u32){
+        let index = (seed as usize) % self.random_values.len();
+        self.current_index.set(index);
+    }
 }

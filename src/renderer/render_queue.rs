@@ -4,26 +4,26 @@ use super::{Renderer, RenderState};
 
 pub type RenderRequest = Box<dyn Fn(&Graphics, &RenderState) -> ()>;
 pub struct RenderRequestLayer {
-    layers: Vec<RenderRequest>,
+    requests: Vec<RenderRequest>,
 }
 impl RenderRequestLayer {
     pub fn new() -> Self {
         Self {
-            layers: Vec::new(),
+            requests: Vec::new(),
         }
     }
 
     pub fn insert_render_request(&mut self, request: RenderRequest) {
-        self.layers.push(request);
+        self.requests.push(request);
     }
 
     pub fn clear_requests(&mut self) {
-        self.layers.clear();
+        self.requests.clear();
     }
 
     pub fn execute_requests(&self, graphics: &Graphics, render_state: &RenderState) {
-        for layer in self.layers.iter() {
-            layer(graphics, render_state);
+        for request in self.requests.iter() {
+            request(graphics, render_state);
         }
     }
 }
