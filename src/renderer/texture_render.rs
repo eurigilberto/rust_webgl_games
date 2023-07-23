@@ -165,7 +165,7 @@ impl TextureShaderRender {
         name: Option<String>
     ) -> Result<Self, ()> {
         let framebuffer = TextureFramebuffer::new(graphics, size, properties, &texture_formats, name);
-        let framebuffer_blitter = if framebuffer.has_blit_framebuffer() {
+        let framebuffer_blitter = if framebuffer.has_blit_framebuffer() && texture_formats.len() > 1 {
             Some(FramebufferBlitter::new(graphics))
         } else {
             None
@@ -228,7 +228,7 @@ impl TextureShaderRender {
         if let Some(framebuffer_blitter) = &self.framebuffer_blitter {
             self.framebuffer
                 .blit_multi_attachment(graphics, framebuffer_blitter);
-        } else {
+        } else if self.framebuffer.has_blit_framebuffer(){
             self.framebuffer.blit_first_attachement(graphics);
         }
     }

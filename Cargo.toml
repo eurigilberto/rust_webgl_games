@@ -16,6 +16,8 @@ rand = {version = "0.8.5"}
 getrandom = { version = "0.2.7", features = ["js"] }
 
 fontdue = "0.7.2"
+rand_chacha = "0.2.0"
+fontsdf = "0.4.7"
 
 [dependencies.wasm-bindgen]
 version = "0.2.82"

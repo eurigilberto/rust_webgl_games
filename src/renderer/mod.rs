@@ -2,7 +2,7 @@ use std::cell::RefCell;
 
 use glam::*;
 use rust_webgl2::{
-    DrawCapabilities, Graphics, MagFilter, MinFilter, Texture2DProps, TextureInternalFormat,
+    DrawCapabilities, Graphics, MagFilter, MinFilter, Texture2DProps,
     TextureWrap, Viewport, RGBA,
 };
 
@@ -15,6 +15,7 @@ pub mod framebuffer;
 use framebuffer::*;
 mod framebuffer_blitter;
 use web_sys::{HtmlCanvasElement, WebGl2RenderingContext};
+pub mod instance_buffer;
 
 use self::texture_render::{ColorRenderable, DepthRenderable};
 

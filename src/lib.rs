@@ -17,6 +17,12 @@ pub mod slotmap;
 pub mod sdf_generation;
 pub mod time;
 
+pub use uuid;
+pub use rand;
+pub use rand_chacha;
+pub use glam;
+pub use rust_webgl2;
+
 const CAMERA_BINDING_NUMBER: u32 = 0;
 
 pub fn set_camera_uniform_block_binding(program: &rust_webgl2::GlProgram) {

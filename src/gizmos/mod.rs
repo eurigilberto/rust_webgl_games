@@ -4,7 +4,7 @@ use std::rc::Rc;
 use bytemuck::{Pod, Zeroable};
 use rust_webgl2::*;
 
-use crate::{geometry, console_log_format};
+use crate::{geometry, set_camera_uniform_block_binding};
 use crate::renderer::Renderer;
 use glam::*;
 
@@ -182,6 +182,7 @@ impl CubeGizmo {
             vec![draw_capabilities],
             &gizmo_default_shader_source(),
         ).expect("Material creation error");
+        set_camera_uniform_block_binding(&material.program);
         Self {
             material: Rc::new(RefCell::new(material)),
             buffer_data,

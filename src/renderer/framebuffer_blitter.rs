@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use glam::{uvec2};
+use glam::uvec2;
 use rust_webgl2::{Graphics, Viewport, MagFilter};
 
 use super::framebuffer::{Framebuffer, FramebufferAttachment};

@@ -81,7 +81,7 @@ impl TextureFramebuffer {
     }
 
     pub fn blit_multi_attachment(&self, graphics: &Graphics, framebuffer_blitter: &FramebufferBlitter){
-        let blit_framebuffer = self.blit_framebuffer.as_ref().expect("Blit framebuffer not created");
+        let blit_framebuffer = self.blit_framebuffer.as_ref().expect("Multi blit framebuffer not created");
         framebuffer_blitter.blit_multi_attachment(
             graphics,
             &self.render_framebuffer,
@@ -91,7 +91,7 @@ impl TextureFramebuffer {
     }
 
     pub fn blit_first_attachement(&self, graphics: &Graphics){
-        let blit_framebuffer = self.blit_framebuffer.as_ref().expect("Blit framebuffer not created");
+        let blit_framebuffer = self.blit_framebuffer.as_ref().expect("Single blit framebuffer not created");
         let viewport = Viewport {
             position: UVec2::ZERO,
             size: self.render_framebuffer.size,
