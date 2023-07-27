@@ -1,4 +1,4 @@
-use std::{collections::HashMap, rc::Rc};
+use std::{collections::{HashMap, HashSet}, rc::Rc};
 
 use fontdue::Metrics;
 use fontsdf::{self, Font};
@@ -178,7 +178,14 @@ pub fn generate_font_texture(
             current_max_height = char_height;
         }
 
-        copy_bitmap_to_texture(&mut font_texture, texture_size, &character.bitmap, character.size, coord, padding);
+        copy_bitmap_to_texture(
+            &mut font_texture,
+            texture_size,
+            &character.bitmap,
+            character.size,
+            coord,
+            padding,
+        );
         coord.x += character.size.x + padding * 2;
     }
 
@@ -251,6 +258,25 @@ pub struct CharData {
     pub sdf_data: Vec<u8>,
 }
 
+
+pub fn generate_char_sdf_data(font_bytes: &[u8], font_size: f32, chars: &[char])->(Vec<Metrics>, Vec<usize>, Vec<Vec<u8>>){
+    let font = fontsdf::Font::from_bytes(font_bytes).unwrap();
+    let mut char_set: HashSet<char> = HashSet::new();
+    let mut char_metrics = Vec::new();
+    let mut char_sdf_len = Vec::new();
+    let mut char_sdf_data = Vec::new();
+    for c in chars {
+        if !char_set.contains(&c) {
+            let (metrics, sdf_data) = font.rasterize_sdf(*c, font_size);
+            char_set.insert(*c);
+            char_metrics.push(metrics);
+            char_sdf_len.push(sdf_data.len());
+            char_sdf_data.push(sdf_data);
+        }
+    }
+    (char_metrics, char_sdf_len, char_sdf_data)
+}
+
 pub struct SDFFontGenerator {
     font: Font,
     pub font_size: f32,
@@ -312,16 +338,18 @@ impl SDFFontGenerator {
             .iter()
             .enumerate()
             .map(|(index, char_data)| {
-                let size = uvec2(char_data.metrics.width as u32, char_data.metrics.height as u32);
+                let size = uvec2(
+                    char_data.metrics.width as u32,
+                    char_data.metrics.height as u32,
+                );
                 return (index, size);
             })
             .collect();
 
         character_sizes.sort_by(|(_, size_a), (_, size_b)| size_a.y.cmp(&size_b.y));
         let texture_size = self.sdf_texture.size;
-    
-        let mut font_texture =
-            vec![0 as u8; (texture_size.x * texture_size.y) as usize];
+
+        let mut font_texture = vec![0 as u8; (texture_size.x * texture_size.y) as usize];
 
         let mut coord = uvec2(0, 0);
         let mut current_max_height = 0;
@@ -350,10 +378,7 @@ impl SDFFontGenerator {
             //Generate character texture slice
             let char_slice = CharacterTextureSlice {
                 index: *char_index,
-                extent: (
-                    coord,
-                    coord + *char_size,
-                ),
+                extent: (coord, coord + *char_size),
             };
 
             self.char_tx_slices.insert(char_key, char_slice);
@@ -364,11 +389,20 @@ impl SDFFontGenerator {
                 current_max_height = char_height;
             }
 
-            copy_bitmap_to_texture(&mut font_texture, texture_size, char_sdf, *char_size, coord, 0);
+            copy_bitmap_to_texture(
+                &mut font_texture,
+                texture_size,
+                char_sdf,
+                *char_size,
+                coord,
+                0,
+            );
 
             coord.x += char_size.x;
         }
-        self.sdf_texture.set_texture_data(0, &font_texture, 0).expect("Could not write texture data");
+        self.sdf_texture
+            .set_texture_data(0, &font_texture, 0)
+            .expect("Could not write texture data");
         console::time_end_with_label("Texture_Generation");
     }
 }
