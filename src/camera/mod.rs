@@ -14,6 +14,17 @@ pub struct CameraMatrices {
     pub projection_view_matrix: Mat4,
 }
 
+impl CameraMatrices{
+    pub fn identity()->Self{
+        Self{
+            transform_matrix: Mat4::IDENTITY,
+            view_matrix: Mat4::IDENTITY,
+            projection_matrix: Mat4::IDENTITY,
+            projection_view_matrix: Mat4::IDENTITY,
+        }
+    }
+}
+
 pub struct ViewData {
     pub camera_matrices: CameraMatrices,
     pub viewport: Viewport,

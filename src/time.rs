@@ -35,7 +35,7 @@ impl Time {
     pub fn new() -> Self {
         Self {
             prev_time: None,
-            time: Milisecond(-1.0),
+            time: Milisecond(0.0),
             frame_count: FrameCount(0),
             delta_time: Milisecond(0.0),
         }

@@ -9,7 +9,7 @@ pub struct DebugCubeGizmoRenderer {
 }
 
 impl DebugCubeGizmoRenderer {
-    pub fn new(renderer: &mut Renderer, gizmo_count: u32) -> Self {
+    pub fn new(renderer: &Renderer, gizmo_count: u32) -> Self {
         let cube_gizmo = CubeGizmo::new(renderer.get_graphics(), gizmo_count);
 
         Self {
@@ -63,7 +63,7 @@ pub mod cube_debug_render {
 
     pub static mut DEBUG_CUBE_RENDERER: Option<DebugCubeGizmoRenderer> = None;
 
-    pub fn create_debug_renderer(renderer: &mut Renderer, gizmo_count: u32) {
+    pub fn create_debug_renderer(renderer: &Renderer, gizmo_count: u32) {
         unsafe { DEBUG_CUBE_RENDERER = Some(DebugCubeGizmoRenderer::new(renderer, gizmo_count)) }
     }
 

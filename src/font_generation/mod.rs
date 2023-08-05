@@ -1,6 +1,6 @@
 use std::{collections::{HashMap, HashSet}, rc::Rc};
 
-use fontdue::Metrics;
+use fontdue::{Metrics, FontSettings};
 use fontsdf::{self, Font};
 use glam::{uvec2, UVec2};
 use rust_webgl2::{GlTexture2D, Graphics, Texture2DProps, TextureInternalFormat};
