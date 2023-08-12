@@ -259,7 +259,7 @@ pub struct CharData {
 }
 
 
-pub fn generate_char_sdf_data(font_bytes: &[u8], font_size: f32, chars: &[char])->(Vec<Metrics>, Vec<usize>, Vec<Vec<u8>>){
+pub fn generate_char_sdf_data(font_bytes: &[u8], font_size: f32, chars: &[char])->(f32, usize, Vec<Metrics>, Vec<usize>, Vec<Vec<u8>>){
     let font = fontsdf::Font::from_bytes(font_bytes).unwrap();
     let mut char_set: HashSet<char> = HashSet::new();
     let mut char_metrics = Vec::new();
@@ -274,7 +274,7 @@ pub fn generate_char_sdf_data(font_bytes: &[u8], font_size: f32, chars: &[char])
             char_sdf_data.push(sdf_data);
         }
     }
-    (char_metrics, char_sdf_len, char_sdf_data)
+    (font.scale_factor(font_size), font.radius(font_size), char_metrics, char_sdf_len, char_sdf_data)
 }
 
 pub struct SDFFontGenerator {
